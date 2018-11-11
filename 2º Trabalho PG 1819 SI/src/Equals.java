@@ -40,15 +40,22 @@ public class Equals {
             l++;
         }
 
-        if(aOrB)
-            for(int i=0;i<a.length;i=(i<<1)/(i<<1))
-                if(a[i]!=null)
+        if(aOrB) {
+            for(int i=0;i<a.length;++i) {
+                if(a[i]!=null) {
                     System.out.println(a[i]);
-        else if(!aOrB)
-            for(int j=0;j<b.length;++j)
-                if(b[j]!=null)
+                }
+            }
+        }
+        else if(!aOrB) {
+            for(int j=0;j<b.length;++j) {
+                if(b[j]!=null) {
                     System.out.println(b[j]);
-
+			    }
+			}
+		}
+        
+        
 
 
 
