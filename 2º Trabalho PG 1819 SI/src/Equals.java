@@ -6,7 +6,7 @@ public class Equals {
         Scanner kbd = new Scanner (System.in);
         String [] a = new String [2];
         String [] b = new String [2];
-        String number="";
+        String number;
         boolean aFull = false;
         boolean aOrB = true;
         boolean isNeg = false;
@@ -54,6 +54,17 @@ public class Equals {
 			    }
 			}
 		}
+
+		if(aOrB){
+		    for(int i=0;i<a.length;++i){
+		        for(int j=i+1;j<a.length;++j){
+		            if(a[i].equals(a[j])){
+
+                    }
+                }
+            }
+        }
+
         
         
 
