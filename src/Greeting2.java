@@ -1,6 +1,6 @@
 import java.time.LocalTime;
 import java.util.Scanner;
-public class Greeting {
+public class Greeting2 {
     public static void main (String[]args){
         Scanner kbd = new Scanner (System.in);
         int h=0;
