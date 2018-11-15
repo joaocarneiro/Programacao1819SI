@@ -1,17 +1,10 @@
 import java.util.Scanner;
 public class Payment {
-    public static void main (String[]args){
+    public static void main (int[]args){
         Scanner kbd = new Scanner (System.in);
-        int k=0;
-        int num=0;
-        while(k < 1) {
-            num *= 10;
-            num += args[0].charAt(k++) - '0';
-        }
-        
         int [] coinsLeft = new int [8];
         for(int i=0;i<coinsLeft.length;++i)
-            coinsLeft[i]=num;
+            coinsLeft[i]=args[0];
         int [] coinsUsed = {0,0,0,0,0,0,0,0};
         final double [] COIN_VALUE = {2,1,0.50,0.20,0.10,0.05,0.02,0.01};
         double price, received, change;
@@ -19,7 +12,7 @@ public class Payment {
         String receipt = "";
         String euro = "\u20ac";
          
-        System.out.println("Maquina carregada com "+num+" moedas de cada tipo.");
+        System.out.println("Maquina carregada com "+args[0]+" moedas de cada tipo.");
         while(true){
         	
             System.out.print("Preco (em euros)? ");
@@ -81,6 +74,6 @@ public class Payment {
                 for(int i=0;i<coinsUsed.length;i++)
                     coinsUsed[i] = 0;
             }
-        }
+        } kbd.close();
     }
 }
