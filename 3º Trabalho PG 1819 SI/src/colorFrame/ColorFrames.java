@@ -67,6 +67,7 @@ public class ColorFrames {
             }
             else
                 Panel.printMessage("Invalid;Place");
+
         }
     }
 
