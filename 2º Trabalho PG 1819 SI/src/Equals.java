@@ -5,38 +5,38 @@ public class Equals {
         String [] a = new String [2], b;
         boolean aFull = false, equal = false;
         int eq=0, l=0;
-        
+
         System.out.println("Insira os valores.");
         while(kbd.hasNextInt()){
-        	a[l]=kbd.next();
-            if(a[a.length-1]!=null) 
-            	aFull = true;
+            a[l]=kbd.next();
+            if(a[a.length-1]!=null)
+                aFull = true;
             if(aFull){
                 b=new String [a.length];
-                for(int i=0;i<a.length;++i) 
-                	b[i]=a[i];
+                for(int i=0;i<a.length;++i)
+                    b[i]=a[i];
                 a=new String [b.length*2];
-                for(int i=0;i<b.length;++i) 
-                	a[i]=b[i];
+                for(int i=0;i<b.length;++i)
+                    a[i]=b[i];
             } l++;
         }
-    	for(int i=0;i<a.length;++i) {
-    		for(int j=i+1;j<a.length;++j) {
-    			if(a[i]!=null) {
-    				if(a[i].equals(a[j]) && a[i]!=null) {
-        				equal=true;
-        				eq++;
-        				a[j]=null;
-        			}
-    			}
-    			else 
-    				break;
-    		}
-    		if(equal) 
-    			eq++;
-    		equal=false;
-    	}
-		System.out.println("Iguais: "+eq);
-		kbd.close();
+        for(int i=0;i<a.length;++i) {
+            for(int j=i+1;j<a.length;++j) {
+                if(a[i]!=null) {
+                    if(a[i].equals(a[j]) && a[i]!=null) {
+                        equal=true;
+                        eq++;
+                        a[j]=null;
+                    }
+                }
+                else
+                    break;
+            }
+            if(equal)
+                eq++;
+            equal=false;
+        }
+        System.out.println("Iguais: "+eq);
+        kbd.close();
     }
 }
