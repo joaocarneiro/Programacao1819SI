@@ -4,11 +4,13 @@ public class Grid {
     public static void main(String[] args) {
         Scanner kbd = new Scanner(System.in);
         int nl, nc, al, lc;
+
         do {
             System.out.print("Linhas (2..5)? ");
             nl = kbd.nextInt();
         }
         while (nl < 2 || nl > 5);
+
         do {
             System.out.print("Colunas (2..8)? ");
             nc = kbd.nextInt();
@@ -27,7 +29,6 @@ public class Grid {
         }
         while (lc < 1 || lc > 5);
 
-//CREATES THE FIRST LINE
         for (int i = 0; i <= nc; ++i) {
             System.out.print("0");
             for (int j = 0; j < lc; ++j)
@@ -35,7 +36,6 @@ public class Grid {
                     System.out.print("-");
         }
         System.out.println();
-//CREATES THE LINES
         for (int i = 1; i <= nl; ++i) {
             for (int j = 0; j < al; ++j) {
                 for (int k = 0; k <= nc; ++k) {
@@ -46,7 +46,6 @@ public class Grid {
                 System.out.println();
             }
             if (i != nl) {
-//CREATES THE LINE DIVISIONS
                 for (int m = 0; m <= nc; ++m) {
                     if (m == 0 || m == nc)
                         System.out.print("0");
@@ -59,7 +58,6 @@ public class Grid {
                 System.out.println();
             }
         }
-//CREATES THE LAST LINE
         for (int i = 0; i <= nc; ++i) {
             System.out.print("0");
             for (int j = 0; j < lc; ++j)

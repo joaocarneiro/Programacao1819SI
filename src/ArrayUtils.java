@@ -20,23 +20,21 @@ public class ArrayUtils {
 	
 	//RODA O ARRAY PARA A ESQUERDA 
 	public static void rotateLeft (int[]arr) {
-		int [] a = arr;
 		int val = arr[0];
-		for(int i=1;i<a.length;++i) {
-			a[i-1]=a[i];
+		for(int i=1;i<arr.length;++i) {
+			arr[i-1]=arr[i];
 		}
-		a[a.length-1]=val;
-		print(a);
+		arr[arr.length-1]=val;
+		print(arr);
 	}
 	
 	//SUBSTITUIR NO ARRAY TODAS AS OCCORRENCIA DE VAL POR NEWVAL
 	public static void replace(int[]arr, int val, int newVal) {
-		int [] a = arr;
-		for(int i = 0; i<a.length;++i) {
-			if(a[i]==val)
-				a[i]=newVal;
+		for(int i = 0; i<arr.length;++i) {
+			if(arr[i]==val)
+				arr[i]=newVal;
 		}
-		print(a);
+		print(arr);
 	}
 	
 	//ENCONTRAR MAIOR E MENOR
@@ -54,13 +52,13 @@ public class ArrayUtils {
 	}
 	
 	public static void print(int [] arr) {
-		for(int i = 0; i<arr.length ; ++i)
-			System.out.print(arr[i]);
+		for(int arrIndex : arr)
+			System.out.print(arrIndex);
 	}
 	
-	public static int[][] createTriangle (int h){
-		int[][]triangle;
-		
-		return triangle;
-	}
+//	public static int[][] createTriangle (int h){
+//		int[][]triangle;
+//
+//		return triangle;
+//	}
 }
