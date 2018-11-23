@@ -100,35 +100,23 @@ public class ColorFrames {
         }
     }
 
+    public static boolean pieceBySizeOnBoardValidator(int i){
+        for(;i<boardMatrix.length;i+=3)
+            if(boardMatrix[i]==NO_FRAME)
+                return true;
+        return false;
+    }
+
     private static void generatePiece() {
         for (int f = 0; f < FRAMES_DIM; ++f)  // Removes all frames
             piece[f] = NO_FRAME;
-        boolean s = false, m = false, xl = false;
-        int i, k = 3;
-        for (i = 0; i < boardMatrix.length; i += 3) {
-            if (boardMatrix[i] == NO_FRAME) {
-                if (k == 3) {
-                    s = true;
-                    if (i == boardMatrix.length - k) {
-                        i = 1;
-                        k = 2;
-                    }
-                }
-                if (k == 2) {
-                    m = true;
-                    if (i == boardMatrix.length - k) {
-                        i = 2;
-                        k = 1;
-                    }
-                }
-                if (k == 1) xl = true;
-            }
-        }
-        System.out.println(s + " " + m + "" + xl);
-        int numOfFrames = 1;// + (int) (Math.random()* (FRAMES_DIM-1)); // Frames to generate
-        for (i = 0; i < numOfFrames; ++i) {
+        boolean s = pieceBySizeOnBoardValidator(0); //returns true if there is space for small pieces
+        boolean m = pieceBySizeOnBoardValidator(1); //returns true if there is space for medium pieces
+        boolean l = pieceBySizeOnBoardValidator(2); //returns true if there is space for large pieces
+        int numOfFrames = 1 + (int) (Math.random()* (FRAMES_DIM-1)); // Frames to generate
+        for (int i = 0; i < numOfFrames; ++i) {
             int frameSize;
-            do frameSize = 0;// (int) (Math.random()* FRAMES_DIM); // Selects a free random dimension
+            do frameSize = (int) (Math.random()* FRAMES_DIM); // Selects a free random dimension
             while( piece[frameSize] != NO_FRAME );
             piece[frameSize] = (int) (Math.random()*MAX_COLORS); // Generate random color
         }
