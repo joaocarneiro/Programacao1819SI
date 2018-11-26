@@ -11,6 +11,7 @@ public class ColorFrames {
     private static final int NO_FRAME = -1;  // Special color to mark frame absence
     private static final int BOARD_PLACES = BOARD_DIM * BOARD_DIM;
     private static int [] boardMatrix = new int [BOARD_PLACES*3];
+    private static int score = 0;
 
     /**
      * Random generated piece.
@@ -64,6 +65,8 @@ public class ColorFrames {
                 generatePiece();
                 printPiece();
                 checkPositionsForVictory(gridNum);
+                if(checkIfBoardIsFull())
+                    terminate = true;
             }
             else
                 Panel.printMessage("Invalid;Place");
@@ -100,7 +103,33 @@ public class ColorFrames {
         }
     }
 
+    public static boolean checkIfBoardIsFull(){
+        for (int i=0; i<boardMatrix.length; ++i) {
+            if(boardMatrix[i]==NO_FRAME) return false;
+        }
+        return true;
+    }
+
     public static void checkPositionsForVictory(int gridNum) {
+        checkCell(gridNum);
+        checkLines(gridNum);
+        checkColumns(gridNum);
+        checkDiagonals(gridNum);
+    }
+
+    public static void checkLines(int gridNum){
+
+    }
+
+    public static void checkColumns(int gridNum){
+
+    }
+
+    public static void checkDiagonals(int gridNum){
+
+    }
+
+    public static void checkCell(int gridNum){
         int iniF = gridNum * 2 + (gridNum - 3);
         int endF = gridNum * 2 + (gridNum - 1);
         int count = 0;
@@ -108,7 +137,7 @@ public class ColorFrames {
             if (boardMatrix[iniF] == boardMatrix[iniF + 1]) count++;
             else break;
         }
-        if (count == 2) {
+        if (count == FRAMES_DIM-1) {
             iniF = gridNum * 2 + (gridNum - 3);
             for (; iniF <= endF; ++iniF) {
                 boardMatrix[iniF] = NO_FRAME;
@@ -116,6 +145,8 @@ public class ColorFrames {
             Panel.clearFrame(0, gridNum);
             Panel.clearFrame(1, gridNum);
             Panel.clearFrame(2, gridNum);
+            score+=FRAMES_DIM;
+            Panel.printScore(score);
         }
     }
 
@@ -158,7 +189,7 @@ public class ColorFrames {
         int[] auxPiece = new int[3];
         for (int f = 0; f < FRAMES_DIM; ++f)
             piece[f] = NO_FRAME;
-        int kNumber = validateBoardCells();
+        int kNumber = 1 + validateBoardCells();
         boolean s = validatePieceOnBoardBySize(0); //returns true if there is space for small pieces
         boolean m = validatePieceOnBoardBySize(1); //returns true if there is space for medium pieces
         boolean l = validatePieceOnBoardBySize(2); //returns true if there is space for large pieces
@@ -174,6 +205,7 @@ public class ColorFrames {
                 while (auxPiece[frameSize] != NO_FRAME);
                 auxPiece[frameSize] = (int) (Math.random() * MAX_COLORS); // Generate random color
             }
+            if(!s&&!m&&!l) break;
         } while (!validatePieceCombinations(auxPiece));
         for (int f = 0; f < auxPiece.length; ++f)  // Removes all frames
             piece[f] = auxPiece[f];
