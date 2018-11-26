@@ -104,7 +104,7 @@ public class ColorFrames {
         int iniF = gridNum * 2 + (gridNum - 3);
         int endF = gridNum * 2 + (gridNum - 1);
         int count = 0;
-        for (; iniF <= endF; ++iniF) {
+        for (; iniF < endF; ++iniF) {
             if (boardMatrix[iniF] == boardMatrix[iniF + 1]) count++;
             else break;
         }
