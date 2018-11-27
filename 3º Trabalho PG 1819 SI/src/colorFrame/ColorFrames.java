@@ -11,6 +11,7 @@ public class ColorFrames {
     private static final int NO_FRAME = -1;  // Special color to mark frame absence
     private static final int BOARD_PLACES = BOARD_DIM * BOARD_DIM;
     private static int [] boardMatrix = new int [BOARD_PLACES*3];
+    private static int score = 0;
 
     /**
      * Random generated piece.
@@ -23,7 +24,6 @@ public class ColorFrames {
      * Flag to finish the game
      */
     private static boolean terminate = false;
-
 
     public static void main(String[] args) {
         Panel.init();
@@ -58,12 +58,15 @@ public class ColorFrames {
         else if (key >= VK_A && key <= VK_Z)
             gridNum = key-VK_A+10;
         if (gridNum>=1 && gridNum<=BOARD_PLACES) {
-            if (validBoardPlace(gridNum)){
+            if (validateBoardPlace(gridNum)) {
                 putPieceInBoard(gridNum);
                 Panel.printMessage("Ok");
                 updateSecondaryBoardMatrix(gridNum);
                 generatePiece();
                 printPiece();
+                checkPositionsForVictory(gridNum);
+                if(checkIfBoardIsFull())
+                    terminate = true;
             }
             else
                 Panel.printMessage("Invalid;Place");
@@ -79,7 +82,7 @@ public class ColorFrames {
         }
     }
 
-    private static boolean validBoardPlace(int gridNum){
+    private static boolean validateBoardPlace(int gridNum) {
         int iniF = gridNum*2+(gridNum-3);
         int endF = gridNum*2+(gridNum-1);
         for (int f = iniF, i=0; f <= endF; ++f, ++i){
@@ -100,38 +103,121 @@ public class ColorFrames {
         }
     }
 
-    private static void generatePiece() {
-        for (int f = 0; f < FRAMES_DIM; ++f)  // Removes all frames
-            piece[f] = NO_FRAME;
-        boolean s = false, m = false, xl = false;
-        int i, k = 3;
-        for (i = 0; i < boardMatrix.length; i += 3) {
-            if (boardMatrix[i] == NO_FRAME) {
-                if (k == 3) {
-                    s = true;
-                    if (i == boardMatrix.length - k) {
-                        i = 1;
-                        k = 2;
-                    }
-                }
-                if (k == 2) {
-                    m = true;
-                    if (i == boardMatrix.length - k) {
-                        i = 2;
-                        k = 1;
-                    }
-                }
-                if (k == 1) xl = true;
+    public static boolean checkIfBoardIsFull(){
+        for (int i=0; i<boardMatrix.length; ++i) {
+            if(boardMatrix[i]==NO_FRAME) return false;
+        }
+        return true;
+    }
+
+    public static void checkPositionsForVictory(int gridNum) {
+        checkCell(gridNum);
+        checkLines(gridNum);
+        checkColumns(gridNum);
+        checkDiagonals(gridNum);
+    }
+
+    public static void checkLines(int gridNum){
+
+    }
+
+    public static void checkColumns(int gridNum){
+
+    }
+
+    public static void checkDiagonals(int gridNum){
+
+    }
+
+    public static void checkCell(int gridNum){
+        int iniF = gridNum * 2 + (gridNum - 3);
+        int endF = gridNum * 2 + (gridNum - 1);
+        int count = 0;
+        for (; iniF < endF; ++iniF) {
+            if (boardMatrix[iniF] == boardMatrix[iniF + 1]) count++;
+            else break;
+        }
+        if (count == FRAMES_DIM-1) {
+            iniF = gridNum * 2 + (gridNum - 3);
+            for (; iniF <= endF; ++iniF) {
+                boardMatrix[iniF] = NO_FRAME;
             }
+            Panel.clearFrame(0, gridNum);
+            Panel.clearFrame(1, gridNum);
+            Panel.clearFrame(2, gridNum);
+            score+=FRAMES_DIM;
+            Panel.printScore(score);
         }
-        System.out.println(s + " " + m + "" + xl);
-        int numOfFrames = 1;// + (int) (Math.random()* (FRAMES_DIM-1)); // Frames to generate
-        for (i = 0; i < numOfFrames; ++i) {
-            int frameSize;
-            do frameSize = 0;// (int) (Math.random()* FRAMES_DIM); // Selects a free random dimension
-            while( piece[frameSize] != NO_FRAME );
-            piece[frameSize] = (int) (Math.random()*MAX_COLORS); // Generate random color
+    }
+
+    public static boolean validatePieceOnBoardBySize(int i) {
+        for(;i<boardMatrix.length;i+=3)
+            if(boardMatrix[i]==NO_FRAME)
+                return true;
+        return false;
+    }
+
+    public static int validateBoardCells() {
+        int framesToGenerate = 0;
+        int larger = 0;
+        for (int i = 0; i < BOARD_PLACES * 3; i += 3) {
+            for (int j = i, k = i + 2; j <= k; ++j) {
+                if (boardMatrix[j] == NO_FRAME) ++framesToGenerate;
+            }
+            if (framesToGenerate > larger) larger = framesToGenerate;
+            framesToGenerate = 0;
         }
+        return larger;
+    }
+
+    public static boolean validatePieceCombinations(int[] auxPiece) {
+        int i = 0, j, k, f;
+        for (i = 0; i < BOARD_PLACES * 3; i += 3) {
+            for (j = i, k = i + 2, f = 0; j <= k; ++j, ++f) {
+                if (j <= k) {
+                    if (auxPiece[f] != NO_FRAME && boardMatrix[j] == NO_FRAME || auxPiece[f] == NO_FRAME) {
+                    } else break;
+                }
+            }
+            f = 0;
+            if (j > k) return true;
+        }
+        return false;
+    }
+
+    private static void generatePiece() {
+        int[] auxPiece = new int[3];
+        for (int f = 0; f < FRAMES_DIM; ++f)
+            piece[f] = NO_FRAME;
+        int kNumber = 1 + validateBoardCells();
+        boolean s = validatePieceOnBoardBySize(0); //returns true if there is space for small pieces
+        boolean m = validatePieceOnBoardBySize(1); //returns true if there is space for medium pieces
+        boolean l = validatePieceOnBoardBySize(2); //returns true if there is space for large pieces
+        int numOfFrames = FRAMES_DIM + 1;
+        while (numOfFrames > kNumber)
+            numOfFrames = 1 + (int) (Math.random() * (FRAMES_DIM - 1)); // Frames to generate
+        do {
+            for (int i = 0; i < numOfFrames; ++i) {
+                for (int f = 0; f < FRAMES_DIM; ++f)
+                    auxPiece[f] = NO_FRAME;
+                int frameSize;
+                do frameSize = (int) (Math.random() * FRAMES_DIM); // Selects a free random dimension
+                while (auxPiece[frameSize] != NO_FRAME);
+                auxPiece[frameSize] = (int) (Math.random() * MAX_COLORS); // Generate random color
+            }
+            if(!s&&!m&&!l) break;
+        } while (!validatePieceCombinations(auxPiece));
+        for (int f = 0; f < auxPiece.length; ++f)  // Removes all frames
+            piece[f] = auxPiece[f];
+    }
+
+    private static int validateIfFrameExists(boolean frame) {
+        if (frame) return 1;
+        return 0;
+    }
+
+    private static int generateFrameSize(boolean s, boolean m, boolean l) {
+        return validateIfFrameExists(s) + validateIfFrameExists(m) + validateIfFrameExists(l);
     }
 
     private static void printPiece() {
