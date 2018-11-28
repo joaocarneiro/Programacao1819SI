@@ -4,8 +4,6 @@ import isel.leic.pg.Console;
 import static java.awt.event.KeyEvent.*;
 import panel.*;
 
-import java.awt.event.MouseEvent;
-
 public class ColorFrames {
     public static final int MAX_COLORS = 5;  // [1..9] Color used to generate random piece
     public static final int BOARD_DIM = 3;  // [2..4] Dimension (lines and columns) of board
@@ -15,6 +13,7 @@ public class ColorFrames {
     private static int [] boardMatrix = new int [BOARD_PLACES*FRAMES_DIM];
     private static int [] board = new int [BOARD_PLACES];
     private static int score = 0;
+    private static int[][] auxBoard = new int[BOARD_DIM][BOARD_DIM];
 
     /**
      * Random generated piece.
@@ -122,7 +121,7 @@ public class ColorFrames {
     }
 
     public static void checkLines(int gridNum){
-
+//        auxBoard[]
     }
 
     public static void checkColumns(int gridNum){
