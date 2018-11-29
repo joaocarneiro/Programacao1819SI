@@ -9,8 +9,8 @@ import static java.awt.event.KeyEvent.*;
 
 public class ColorFrames1 {
     public static final int MAX_COLORS = 5;  // [1..9] Color used to generate random piece
-    public static final int BOARD_DIM = 3;  // [2..4] Dimension (lines and columns) of board
-    public static final int FRAMES_DIM = 3; // [1..4] Number of frames in each place of of board
+    public static final int BOARD_DIM = 2;  // [2..4] Dimension (lines and columns) of board
+    public static final int FRAMES_DIM = 1; // [1..4] Number of frames in each place of of board
     private static final int NO_FRAME = -1;  // Special color to mark frame absence
     private static final int BOARD_PLACES = BOARD_DIM * BOARD_DIM;
 
@@ -94,7 +94,9 @@ public class ColorFrames1 {
             return 0;
         if (gridNum > BOARD_DIM && gridNum <= BOARD_DIM * 2)
             return 1;
-        return 2;
+        if (gridNum > BOARD_DIM * 2 && gridNum <= BOARD_DIM * 3)
+            return 2;
+        return 3;
     }
 
     @Contract(pure = true)
@@ -112,7 +114,7 @@ public class ColorFrames1 {
 
     private static void checkPositionsForVictory(int gridNum) {
         checkCell(gridNum);
-//        checkLines(gridNum);
+        checkLines(gridNum);
 //        checkColumns(gridNum);
 //        checkDiagonals(gridNum);
     }
@@ -135,6 +137,21 @@ public class ColorFrames1 {
             Panel.clearFrame(2, gridNum);
             score += FRAMES_DIM;
             Panel.printScore(score);
+        }
+    }
+
+    public static void checkLines(int gridNum) {
+        int line = checkLine(gridNum);
+        int count = 0;
+        for (int i = line; i < line + 1; ++i) {
+            for (int j = 0; j < ultimateBoard[i].length; ++j) {
+                for (int k = 0; k < ultimateBoard[i][j].length; ++k) {
+                    for (int m = k + 1; m < ultimateBoard[i][j].length; ++m) {
+                        if (ultimateBoard[i][j][k] == ultimateBoard[i][j][m])
+                            count++;
+                    }
+                }
+            }
         }
     }
 
