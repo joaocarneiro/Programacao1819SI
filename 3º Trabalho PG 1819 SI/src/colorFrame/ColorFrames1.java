@@ -202,28 +202,30 @@ public class ColorFrames1 {
 
     @Contract(pure = true)
     public static boolean validatePieceCombinations(int[] piece) {
+        int k;
         for (int i = 0; i < ultimateBoard.length; ++i)
             for (int j = 0; j < ultimateBoard[i].length; ++j) {
-                for (int k = 0; k < ultimateBoard[i][j].length; ++k) {
-                    if (piece[k] != NO_FRAME && ultimateBoard[i][j][k] == NO_FRAME || piece[k] == NO_FRAME) {
-                    } else
+                for (k = 0; k < ultimateBoard[i][j].length; ++k) {
+                    if (piece[k] != NO_FRAME && ultimateBoard[i][j][k] == NO_FRAME || piece[k] == NO_FRAME) {}
+                    else
                         break;
                 }
-
+                if(k>=ultimateBoard[i][j].length) return true;
             }
-
-        int i = 0, j, k, f;
-        for (i = 0; i < BOARD_PLACES * 3; i += 3) {
-            for (j = i, k = i + 2, f = 0; j <= k; ++j, ++f) {
-                if (j <= k) {
-                    if (auxPiece[f] != NO_FRAME && boardMatrix[j] == NO_FRAME || auxPiece[f] == NO_FRAME) {
-                    } else break;
-                }
-            }
-            f = 0;
-            if (j > k) return true;
-        }
         return false;
+
+//        int i = 0, j, k, f;
+//        for (i = 0; i < BOARD_PLACES * 3; i += 3) {
+//            for (j = i, k = i + 2, f = 0; j <= k; ++j, ++f) {
+//                if (j <= k) {
+//                    if (auxPiece[f] != NO_FRAME && boardMatrix[j] == NO_FRAME || auxPiece[f] == NO_FRAME) {
+//                    } else break;
+//                }
+//            }
+//            f = 0;
+//            if (j > k) return true;
+//        }
+//        return false;
     }
 
     private static void printPiece() {
