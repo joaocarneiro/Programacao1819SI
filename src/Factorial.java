@@ -1,3 +1,12 @@
+/*
+RECURSIVIDADE
+
+Uma função recursiva é uma função que se chama a ela propria, fazendo um processamento equivalente a um ciclo.
+Contudo, as chamadas recursivas são eficientes em termos de espaço ocupado relativamente a um ciclo.
+Certos programas ficam mais simples de implementar com recursividade quando comparado com um ciclo
+(Ex.: Algoritmo quick sort recursivo VS iterativo)
+ */
+
 import java.util.Scanner;
 public class Factorial {
 
