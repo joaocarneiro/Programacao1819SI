@@ -2,15 +2,14 @@ package colorFrame;
 
 import isel.leic.pg.Console;
 import org.jetbrains.annotations.Contract;
-import panel.Panel;
 import panel.Panel1;
 
 import static java.awt.event.KeyEvent.*;
 
 public class ColorFrames1 {
     public static final int MAX_COLORS = 5;  // [1..9] Color used to generate random piece
-    public static final int BOARD_DIM = 2;  // [2..4] Dimension (lines and columns) of board
-    public static final int FRAMES_DIM = 1; // [1..4] Number of frames in each place of of board
+    public static final int BOARD_DIM = 3;  // [2..4] Dimension (lines and columns) of board
+    public static final int FRAMES_DIM = 3; // [1..4] Number of frames in each place of of board
     private static final int NO_FRAME = -1;  // Special color to mark frame absence
     private static final int BOARD_PLACES = BOARD_DIM * BOARD_DIM;
 
@@ -21,6 +20,10 @@ public class ColorFrames1 {
      */
     private static int[] piece = new int[FRAMES_DIM];
     private static int[][][] ultimateBoard = new int[BOARD_DIM][BOARD_DIM][FRAMES_DIM];
+    private static int[] lineColors;
+    private static int[] columnColors;
+    private static int[] gridNumsByLine;
+    private static int[] gridNumsByColumn;
 
     /**
      * Flag to finish the game
@@ -66,15 +69,15 @@ public class ColorFrames1 {
         if (gridNum >= 1 && gridNum <= BOARD_PLACES) {
             if (validateBoardPlace(gridNum)) {
                 putPieceInBoard(gridNum);
-                Panel.printMessage("Ok");
+                Panel1.printMessage("Ok");
                 updateSecondaryBoardMatrix(gridNum);
+                checkPositionsForVictory(gridNum);
                 generatePiece();
                 printPiece();
-                checkPositionsForVictory(gridNum);
                 if (checkIfBoardIsFull())
                     terminate = true;
             } else
-                Panel.printMessage("Invalid;Place");
+                Panel1.printMessage("Invalid;Place");
         }
     }
 
@@ -113,46 +116,161 @@ public class ColorFrames1 {
     }
 
     private static void checkPositionsForVictory(int gridNum) {
-        checkCell(gridNum);
-        checkLines(gridNum);
-//        checkColumns(gridNum);
-//        checkDiagonals(gridNum);
+        boolean cellToRemove = checkCell(gridNum);
+        boolean lineToRemove = checkLines(gridNum);
+        boolean columnToRemove = checkColumns(gridNum);
+        clearFrames(gridNum, cellToRemove, lineToRemove, columnToRemove);
+//        if(line == 0 || line == BOARD_DIM-1 && col == 0 || col == BOARD_DIM-1) {
+//          diagonalToRemove(gridNum);
+//        }
     }
 
-    private static void checkCell(int gridNum) {
+    public static int[] populateGridNumsByColumn(int col) {
+        int[] gridNumColumn = new int[BOARD_DIM];
+        for (int i = 0; i < gridNumColumn.length; ++i)
+            gridNumColumn[i] = BOARD_DIM * (i + 1) - (BOARD_DIM - col - 1);
+        return gridNumColumn;
+    }
+
+    private static boolean checkColumns(int gridNum) {
         int line = checkLine(gridNum);
         int col = checkCol(line, gridNum);
-        int count = 0;
-        for (int k = 0, j = 1; j < ultimateBoard[line][col].length; ++k, ++j) {
-            if (ultimateBoard[line][col][k] == ultimateBoard[line][col][j])
-                count++;
-            else
-                break;
+        gridNumsByColumn = populateGridNumsByColumn(col);
+        columnColors = new int[FRAMES_DIM];
+        boolean colorToRemove = false;
+        for (int f = 0; f < columnColors.length; ++f)
+            columnColors[f] = NO_FRAME;
+        int color = NO_FRAME;
+        for (int frame = 0; frame < FRAMES_DIM; ++frame) {
+            for (int nextLine = 1; nextLine < BOARD_DIM; ++nextLine) {
+                for (int nextLineFrame = 0; nextLineFrame < FRAMES_DIM; ++nextLineFrame) {
+                    if (ultimateBoard[0][col][frame] == ultimateBoard[nextLine][col][nextLineFrame] && ultimateBoard[0][col][frame] != NO_FRAME) {
+                        if (nextLine == BOARD_DIM - 1 && color == ultimateBoard[nextLine][col][nextLineFrame])
+                            colorToRemove = true;
+                        if (nextLine < BOARD_DIM - 1)
+                            color = ultimateBoard[0][col][frame];
+                        break;
+                    }
+                }
+                if (color == NO_FRAME)
+                    break;
+            }
+            int f = 0;
+            if (colorToRemove) {
+                while (color != NO_FRAME) {
+                    if (columnColors[f] == color) {
+                        color = NO_FRAME;
+                        break;
+                    }
+                    if (columnColors[f] == NO_FRAME) {
+                        columnColors[f] = color;
+                        color = NO_FRAME;
+                    } else
+                        ++f;
+                }
+            }
+            colorToRemove = false;
         }
-        if (count == FRAMES_DIM - 1) {
-            for (int k = 0; k < ultimateBoard[line][col].length; ++k)
-                ultimateBoard[line][col][k] = NO_FRAME;
-            Panel.clearFrame(0, gridNum);
-            Panel.clearFrame(1, gridNum);
-            Panel.clearFrame(2, gridNum);
-            score += FRAMES_DIM;
-            Panel.printScore(score);
+        for (int f = 0; f < FRAMES_DIM; ++f)
+            if (columnColors[f] != NO_FRAME)
+                return true;
+        return false;
+    }
+
+    private static void clearFrames(int gridNum, boolean cellToRemove, boolean lineToRemove, boolean columnToRemove) {
+        int line = checkLine(gridNum);
+        int col = checkCol(line, gridNum);
+        if (cellToRemove) {
+            Panel1.clearFrame(0, gridNum);
+            Panel1.clearFrame(1, gridNum);
+            Panel1.clearFrame(2, gridNum);
+        }
+//        if(lineToRemove){
+//            for(int colI = 0; colI < BOARD_DIM; ++colI) {
+//                for (int frame = 0; frame < FRAMES_DIM; ++frame)
+//                    for (int color = 0; color < lineColors.length; ++color)
+//                        if (ultimateBoard[line][colI][frame] == lineColors[color]) {
+//                            ultimateBoard[line][colI][frame] = NO_FRAME;
+//                            Panel1.clearFrame(frame, gridNumsByLine[colI]);
+//                        }
+//            }
+//        }
+        if (columnToRemove) {
+            for (int lineI = 0; lineI < BOARD_DIM; ++lineI) {
+                for (int frame = 0; frame < FRAMES_DIM; ++frame)
+                    for (int color = 0; color < columnColors.length; ++color)
+                        if (ultimateBoard[lineI][col][frame] == columnColors[color]) {
+                            ultimateBoard[lineI][col][frame] = NO_FRAME;
+                            Panel1.clearFrame(frame, gridNumsByColumn[lineI]);
+                        }
+            }
         }
     }
 
-    public static void checkLines(int gridNum) {
+    private static boolean checkCell(int gridNum) {
         int line = checkLine(gridNum);
-        int count = 0;
-        for (int i = line; i < line + 1; ++i) {
-            for (int j = 0; j < ultimateBoard[i].length; ++j) {
-                for (int k = 0; k < ultimateBoard[i][j].length; ++k) {
-                    for (int m = k + 1; m < ultimateBoard[i][j].length; ++m) {
-                        if (ultimateBoard[i][j][k] == ultimateBoard[i][j][m])
-                            count++;
+        int col = checkCol(line, gridNum);
+        for (int k = 0, j = 1; j < ultimateBoard[line][col].length; ++k, ++j) {
+            if (ultimateBoard[line][col][k] != ultimateBoard[line][col][j])
+                return false;
+        }
+        for (int k = 0; k < ultimateBoard[line][col].length; ++k)
+            ultimateBoard[line][col][k] = NO_FRAME;
+        score += FRAMES_DIM;
+        Panel1.printScore(score);
+        return true;
+//
+    }
+
+    public static int[] populateGridNumsByLine(int line) {
+        int[] gridNumLine = new int[BOARD_DIM];
+        for (int i = 0; i < gridNumLine.length; ++i)
+            gridNumLine[i] = BOARD_DIM * line + i + 1;
+        return gridNumLine;
+    }
+
+    public static boolean checkLines(int gridNum) {
+        int line = checkLine(gridNum);
+        gridNumsByLine = populateGridNumsByLine(line);
+        lineColors = new int[FRAMES_DIM];
+        boolean colorToRemove = false;
+        for (int f = 0; f < lineColors.length; ++f)
+            lineColors[f] = NO_FRAME;
+        int color = NO_FRAME;
+        for (int frame = 0; frame < FRAMES_DIM; ++frame) {
+            for (int nextCol = 1; nextCol < BOARD_DIM; ++nextCol) {
+                for (int nextColFrame = 0; nextColFrame < FRAMES_DIM; ++nextColFrame) {
+                    if (ultimateBoard[line][0][frame] == ultimateBoard[line][nextCol][nextColFrame] && ultimateBoard[line][0][frame] != NO_FRAME) {
+                        if (nextCol == BOARD_DIM - 1 && color == ultimateBoard[line][nextCol][nextColFrame])
+                            colorToRemove = true;
+                        if (nextCol < BOARD_DIM - 1)
+                            color = ultimateBoard[line][0][frame];
+                        break;
                     }
                 }
+                if (color == NO_FRAME)
+                    break;
             }
+            int f = 0;
+            if (colorToRemove) {
+                while (color != NO_FRAME) {
+                    if (lineColors[f] == color) {
+                        color = NO_FRAME;
+                        break;
+                    }
+                    if (lineColors[f] == NO_FRAME) {
+                        lineColors[f] = color;
+                        color = NO_FRAME;
+                    } else
+                        ++f;
+                }
+            }
+            colorToRemove = false;
         }
+        for (int f = 0; f < FRAMES_DIM; ++f)
+            if (lineColors[f] != NO_FRAME)
+                return true;
+        return false;
     }
 
     public static boolean checkIfBoardIsFull() {
@@ -176,9 +294,6 @@ public class ColorFrames1 {
 
     private static void generatePiece() {
         int kNumber = 1 + validateBoardCells();
-        boolean s = validatePieceOnBoardBySize(0); //returns true if there is space for small pieces
-        boolean m = validatePieceOnBoardBySize(1); //returns true if there is space for medium pieces
-        boolean l = validatePieceOnBoardBySize(2); //returns true if there is space for large pieces
         int numOfFrames = 1 + (int) (Math.random() * (kNumber - 1)); // Frames to generate
         do {
             for (int f = 0; f < FRAMES_DIM; ++f)
@@ -189,7 +304,7 @@ public class ColorFrames1 {
                 while (piece[frameSize] != NO_FRAME);
                 piece[frameSize] = (int) (Math.random() * MAX_COLORS); // Generate random color
             }
-            if (!s && !m && !l) break;
+            if (validateBoardCells() <= 0) break;
         } while (!validatePieceCombinations(piece));
     }
 
@@ -206,15 +321,6 @@ public class ColorFrames1 {
                 framesToGenerate = 0;
             }
         return larger;
-    }
-
-    @Contract(pure = true)
-    public static boolean validatePieceOnBoardBySize(int size) {
-        for (int i = 0; i < ultimateBoard.length; ++i)
-            for (int j = 0; j < ultimateBoard[i].length; ++j)
-                if (ultimateBoard[i][j][size] == NO_FRAME)
-                    return true;
-        return false;
     }
 
     @Contract(pure = true)
