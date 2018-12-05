@@ -2,6 +2,7 @@ package colorFrame;
 
 import isel.leic.pg.Console;
 import org.jetbrains.annotations.Contract;
+import panel.Panel;
 import panel.Panel1;
 
 import static java.awt.event.KeyEvent.*;
@@ -69,7 +70,7 @@ public class ColorFrames1 {
                 int frameSize;
                 do frameSize = (int) (Math.random() * FRAMES_DIM); // Selects a free random dimension
                 while (piece[frameSize] != NO_FRAME);
-                piece[frameSize] = (int) (Math.random() * MAX_COLORS); // Generate random color
+                piece[frameSize] = 1;//(int) (Math.random() * MAX_COLORS); // Generate random color
             }
             if (validateBoardCells() <= 0) break;
         } while (!validatePieceCombinations(piece));
@@ -350,14 +351,15 @@ public class ColorFrames1 {
         return false;
     }
 
-    public static void updateBoard(){
-        int gridNum=1;
-        while(gridNum<=BOARD_PLACES) {
+    public static void updateBoard() {
+        int gridNum = 1;
+        while (gridNum <= BOARD_PLACES) {
             for (int line = 0; line < ultimateBoard.length; ++line) {
                 for (int col = 0; col < ultimateBoard[line].length; ++col) {
                     for (int frame = 0; frame < ultimateBoard[line][col].length; ++frame) {
-                        if (ultimateBoard[line][col][frame] == NO_FRAME)
+                        if (ultimateBoard[line][col][frame] == NO_FRAME) {
                             Panel1.clearFrame(frame, gridNum);
+                        }
                     }
                     gridNum++;
                 }
@@ -370,37 +372,50 @@ public class ColorFrames1 {
         int col = getCol(line, gridNum);
 
         if (removeCell) {
-            for (int k = 0; k < ultimateBoard[line][col].length; ++k)
-                ultimateBoard[line][col][k] = NO_FRAME;
+            for (int k = 0; k < ultimateBoard[line][col].length; ++k) {
+                score += 1;
+                ultimateBoard[line][col][k]=NO_FRAME;
+                Panel1.clearFrame(k, gridNum);
+            }
         }
         if(removeLine){
             for(int colI = 0; colI < BOARD_DIM; ++colI)
                 for (int frame = 0; frame < FRAMES_DIM; ++frame)
                     for (int color = 0; color < lineColors.length; ++color)
-                        if (ultimateBoard[line][colI][frame] == lineColors[color])
+                        if (ultimateBoard[line][colI][frame] == lineColors[color]) {
                             ultimateBoard[line][colI][frame] = NO_FRAME;
+                            score+=1;
+                        }
         }
         if (removeColumn) {
             for (int lineI = 0; lineI < BOARD_DIM; ++lineI)
                 for (int frame = 0; frame < FRAMES_DIM; ++frame)
                     for (int color = 0; color < columnColors.length; ++color)
-                        if (ultimateBoard[lineI][col][frame] == columnColors[color])
+                        if (ultimateBoard[lineI][col][frame] == columnColors[color]) {
                             ultimateBoard[lineI][col][frame] = NO_FRAME;
+                            score+=1;
+                        }
         }
         if(removeMainDiagonal){
             for (int lineI = 0; lineI < BOARD_DIM; ++lineI)
                 for (int frame = 0; frame < FRAMES_DIM; ++frame)
                     for (int color = 0; color < columnColors.length; ++color)
-                        if (ultimateBoard[lineI][col][frame] == columnColors[color])
+                        if (ultimateBoard[lineI][col][frame] == columnColors[color]) {
                             ultimateBoard[lineI][col][frame] = NO_FRAME;
+                            score+=1;
+                        }
         }
         if(removeSecondaryDiagonal){
             for (int lineI = 0; lineI < BOARD_DIM; ++lineI)
                 for (int frame = 0; frame < FRAMES_DIM; ++frame)
                     for (int color = 0; color < columnColors.length; ++color)
-                        if (ultimateBoard[lineI][col][frame] == columnColors[color])
+                        if (ultimateBoard[lineI][col][frame] == columnColors[color]) {
                             ultimateBoard[lineI][col][frame] = NO_FRAME;
+                            score+=1;
+                        }
         }
+        Panel1.printScore(score);
+        score=0;
     }
 
     public static boolean checkIfBoardIsFull() {
