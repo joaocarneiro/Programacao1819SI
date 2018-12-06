@@ -26,7 +26,7 @@ public class Panel1 {
     public static void init() {
         fontSize(FONT_SIZE);
         open("PG Color Frames", LINES, COLS);
-        enableMouseEvents(false);
+        enableMouseEvents(true);
         printGrid();
     }
 
