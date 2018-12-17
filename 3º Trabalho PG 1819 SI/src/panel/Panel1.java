@@ -18,7 +18,7 @@ public class Panel1 {
             BOARD_SIZE = (GRID_SIZE + 1) * BOARD_DIM + 1,
             LINES = BOARD_SIZE + STATUS_LINES,
             COLS = Math.max(BOARD_SIZE, SCORE_COLS + GRID_SIZE + MESSAGE_COLS),
-            FONT_SIZE = 18;
+            FONT_SIZE = 15;
 
     /**
      * Open console window and print initial panel
@@ -56,23 +56,31 @@ public class Panel1 {
         }
         printLabel("Score", 1);
         printScore(0);
-        printLabel("Level", 4);
-        printValue(0, 5);
+        printLabel("Level", 3);
+        printLevel(1);
+        printLabel("Time ", 5);
+        printTime("0");
         clearArea();
     }
 
     private static final int COL_SCORE = Math.max(BOARD_SIZE / 2 - 3 * GRID_SIZE / 2, 1);
 
     private static void printLabel(String txt, int line) {
-        cursor(BOARD_SIZE + line, COL_SCORE);
+        cursor(BOARD_SIZE + line-1, 1);
         color(GRAY, BLACK);
         print(center(txt, SCORE_COLS));
     }
 
     private static void printValue(int value, int line) {
-        cursor(BOARD_SIZE + line, COL_SCORE);
+        cursor(BOARD_SIZE + line-1, 1);
         color(WHITE, BLACK);
         print(center("" + value, SCORE_COLS));
+    }
+
+    private static void printValueTime(String value, int line) {
+        cursor(BOARD_SIZE + line-1, 1);
+        color(WHITE, BLACK);
+        print(center(value, SCORE_COLS));
     }
 
     /**
@@ -90,9 +98,12 @@ public class Panel1 {
      * @param level
      */
     public static void printLevel(int level) {
-        printValue(level, 5);
+        printValue(level, 4);
     }
 
+    public static void printTime(String time) {
+        printValueTime(time, 6);
+    }
     /**
      * Print one frame with the indicated size, color and position
      *
@@ -170,7 +181,7 @@ public class Panel1 {
     private static final int COL_MESSAGE = COL_PIECE + GRID_SIZE / 2 + 1;
     private static final int LEN_MESSAGE = COLS - COL_MESSAGE;
 
-    private static final void clearArea() {
+    public static final void clearArea() {
         clearRect(LINE_MESSAGE, COL_MESSAGE, GRID_SIZE, LEN_MESSAGE, BLACK);
     }
 
@@ -192,7 +203,7 @@ public class Panel1 {
         for (String line : lines) {
             if (line.length() > LEN_MESSAGE) line = line.substring(0, LEN_MESSAGE);
             cursor(l++, COL_MESSAGE);
-            print(center(line, LEN_MESSAGE));
+            print(line);
         }
         cursor(LINE_MESSAGE + lines.length, COL_MESSAGE);
     }

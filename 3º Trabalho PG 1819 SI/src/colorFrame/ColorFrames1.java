@@ -1,15 +1,14 @@
 package colorFrame;
 
 import isel.leic.pg.Console;
-
-import static isel.leic.pg.Console.*;
-import static isel.leic.pg.Console.MAX_COLORS;
-import static java.awt.event.KeyEvent.*;
-import static isel.leic.pg.Location.*;
-
 import isel.leic.pg.Location;
 import isel.leic.pg.MouseEvent;
 import panel.Panel1;
+
+import javax.swing.*;
+
+import static isel.leic.pg.Console.*;
+import static java.awt.event.KeyEvent.*;
 
 public class ColorFrames1 {
     public static int MAX_COLORS = 4;  // [1..9] Color used to generate random piece
@@ -36,8 +35,24 @@ public class ColorFrames1 {
     private static boolean terminate = false;
     private static int score = 0;
     private static int level = 1;
-    private static int startTime = 0;
-    private static Location loc = new Location();
+    private static long startTime = System.currentTimeMillis();
+    private static Thread timer = null;
+    private static volatile boolean running = true;
+
+    public static void time (){
+        timer = new Thread(() -> {
+            while (running)
+            {
+                long time = System.currentTimeMillis() - startTime;
+                long elapsedSeconds = time / 1000;
+                long secondsDisplay = elapsedSeconds % 60;
+                long elapsedMinutes = elapsedSeconds / 60;
+                SwingUtilities.invokeLater(() -> Panel1.printTime((int)elapsedMinutes+":"+(int)secondsDisplay));
+                try { Thread.sleep(100); } catch(Exception e) {}
+            }
+        });
+        timer.start();
+    }
 
     public static void main(String[] args) {
         Panel1.init();
@@ -48,7 +63,7 @@ public class ColorFrames1 {
     }
 
     private static void restartGame() {
-        Panel1.printMessage("Welcome");
+        Panel1.printMessage("Welcome ");
         Panel1.printMessage("Restart?;Press Y;Or;Press N");
         int key;
         do {
@@ -81,12 +96,20 @@ public class ColorFrames1 {
         score=0;
         Panel1.printScore(score);
         level = 1;
+        Panel1.printLevel(level);
+        timer = null;
+        startTime = System.currentTimeMillis();
+        running = true;
+//        Panel1.printTime("0");
         terminate=false;
+        Panel1.clearArea();
+        Panel1.printGrid();
         playGame();
     }
 
     private static void processClick(Location l) {
         if (l == null) return; // Não é DOWN
+        System.out.println(l.line+","+l.col);
         if (l.line>0)
             cursor(l.line, l.col);
         if(l.line>=17&&l.line<=23&&l.col>=1&&l.col<=7)
@@ -110,6 +133,7 @@ public class ColorFrames1 {
     }
 
     private static void playGame() {
+        time();
         int key;
         for (int i = 0; i < ultimateBoard.length; ++i)
             for (int j = 0; j < ultimateBoard[i].length; ++j)
@@ -131,7 +155,7 @@ public class ColorFrames1 {
 
     private static void generatePiece() {
         int kNumber = 1 + validateBoardCells();
-        int numOfFrames = 1;// + (int) (Math.random() * (kNumber - 1)); // Frames to generate
+        int numOfFrames = 1 + (int) (Math.random() * (kNumber - 1)); // Frames to generate
         do {
             for (int f = 0; f < FRAMES_DIM; ++f)
                 piece[f] = NO_FRAME;
@@ -139,7 +163,7 @@ public class ColorFrames1 {
                 int frameSize;
                 do frameSize = (int) (Math.random() * FRAMES_DIM); // Selects a free random dimension
                 while (piece[frameSize] != NO_FRAME);
-                piece[frameSize] = 1 + (int) (Math.random() * MAX_COLORS); // Generate random color
+                piece[frameSize] = (int) (Math.random() * MAX_COLORS); // Generate random color
             }
             if (validateBoardCells() <= 0) break;
         } while (!validatePieceCombinations(piece));
@@ -181,9 +205,21 @@ public class ColorFrames1 {
         }
     }
 
+    public static void terminate() {
+        running = false;
+    }
+
     private static void processKey(int key) {
         if (key == VK_ESCAPE) terminate = true;
         if (checkIfBoardIsFull()) {
+            if (timer != null) {
+                try {
+                    terminate();
+                    timer.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
             if (key == VK_N) terminate = true;
             else if (key == VK_Y)
                 prepareForNewGame();
@@ -250,7 +286,9 @@ public class ColorFrames1 {
     }
 
     private static void checkPositionsForVictory(int gridNum) {
-        boolean removeCell = checkCell(gridNum);
+        boolean removeCell = false;
+        if(FRAMES_DIM>1)
+            removeCell = checkCell(gridNum);
         boolean removeLine = checkLines(gridNum);
         boolean removeColumn = checkColumns(gridNum);
         boolean removeMainDiagonal = false;
@@ -446,22 +484,22 @@ public class ColorFrames1 {
     }
 
     private static boolean checkSecondaryDiagonal(int gridNum) {
-        //getLine(gridNum)+getCol(gridNum)==BOARD_DIM-1
         secondaryDiagonalColors = new int[FRAMES_DIM];
         for (int f = 0; f < secondaryDiagonalColors.length; ++f)
             secondaryDiagonalColors[f] = NO_FRAME;
         int line;
-        int col;
         int frameNextLine;
         int color;
         boolean[] checkIfAllPlacesContainFrameColor = new boolean[BOARD_DIM];
         if (!checkIfPlaceInSecondaryDiagonalIsEmpty(gridNum))
             return false;
         for (int frame = 0; frame < FRAMES_DIM; ++frame) {
-            if (ultimateBoard[0][BOARD_DIM - 1][frame] == NO_FRAME) continue;
-            color = ultimateBoard[0][BOARD_DIM - 1][frame];
+            int col = BOARD_DIM - 1;
+            if (ultimateBoard[0][col][frame] == NO_FRAME) continue;
+            color = ultimateBoard[0][col][frame];
             checkIfAllPlacesContainFrameColor[0] = true;
-            for (line = 1, col = 1; line < BOARD_DIM; ++line, --col) {
+            --col;
+            for (line = 1; line < BOARD_DIM; ++line, --col) {
                 for (frameNextLine = 0; frameNextLine < FRAMES_DIM; ++frameNextLine) {
                     if (color == ultimateBoard[line][col][frameNextLine])
                         break;
@@ -543,7 +581,7 @@ public class ColorFrames1 {
                         }
         }
         if(removeSecondaryDiagonal){
-            for (int line = 0, col = 2; line < BOARD_DIM; ++line, --col)
+            for (int line = 0, col = BOARD_DIM-1; line < BOARD_DIM; ++line, --col)
                 for (int frame = 0; frame < FRAMES_DIM; ++frame)
                     for (int color = 0; color < secondaryDiagonalColors.length; ++color)
                         if (ultimateBoard[line][col][frame] == secondaryDiagonalColors[color] && ultimateBoard[line][col][frame] != NO_FRAME) {
@@ -555,30 +593,32 @@ public class ColorFrames1 {
     }
 
     private static void updateMaxColors(int score) {
-        if (score > 25 && score <= 50 && level == 1) {
-            MAX_COLORS++;
-            level++;
-            Panel1.printLevel(level);
-        }
-        if (score > 50 && score <= 100 && level == 2) {
-            MAX_COLORS++;
-            level++;
-            Panel1.printLevel(level);
-        }
-        if (score > 100 && score <= 200 && level == 3) {
-            MAX_COLORS++;
-            level++;
-            Panel1.printLevel(level);
-        }
-        if (score > 200 && score <= 400 && level == 4) {
-            MAX_COLORS++;
-            level++;
-            Panel1.printLevel(level);
-        }
-        if (score > 400 && level == 5) {
-            MAX_COLORS++;
-            level++;
-            Panel1.printLevel(level);
+        if(MAX_COLORS<8) {
+            if (score > 25 && score <= 50 && level == 1) {
+                MAX_COLORS++;
+                level++;
+                Panel1.printLevel(level);
+            }
+            if (score > 50 && score <= 100 && level == 2) {
+                MAX_COLORS++;
+                level++;
+                Panel1.printLevel(level);
+            }
+            if (score > 100 && score <= 200 && level == 3) {
+                MAX_COLORS++;
+                level++;
+                Panel1.printLevel(level);
+            }
+            if (score > 200 && score <= 400 && level == 4) {
+                MAX_COLORS++;
+                level++;
+                Panel1.printLevel(level);
+            }
+            if (score > 400 && level == 5) {
+                MAX_COLORS++;
+                level++;
+                Panel1.printLevel(level);
+            }
         }
     }
 
