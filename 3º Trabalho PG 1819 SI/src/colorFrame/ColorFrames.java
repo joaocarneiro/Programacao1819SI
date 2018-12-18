@@ -1,19 +1,21 @@
 package colorFrame;
 
 import isel.leic.pg.Console;
+import isel.leic.pg.Location;
+import isel.leic.pg.MouseEvent;
+import panel.Panel;
+
+import javax.swing.*;
+
+import static isel.leic.pg.Console.*;
 import static java.awt.event.KeyEvent.*;
-import panel.*;
 
 public class ColorFrames {
-    public static final int MAX_COLORS = 5;  // [1..9] Color used to generate random piece
+    public static int MAX_COLORS = 4;  // [1..9] Color used to generate random piece
     public static final int BOARD_DIM = 3;  // [2..4] Dimension (lines and columns) of board
     public static final int FRAMES_DIM = 3; // [1..4] Number of frames in each place of of board
     private static final int NO_FRAME = -1;  // Special color to mark frame absence
     private static final int BOARD_PLACES = BOARD_DIM * BOARD_DIM;
-    private static int [] boardMatrix = new int [BOARD_PLACES*FRAMES_DIM];
-    private static int [] board = new int [BOARD_PLACES];
-    private static int score = 0;
-    private static int[][] auxBoard = new int[BOARD_DIM][BOARD_DIM];
 
     /**
      * Random generated piece.
@@ -21,11 +23,48 @@ public class ColorFrames {
      * Each index corresponds to one dimension of the frame.
      */
     private static int[] piece = new int[FRAMES_DIM];
+    private static int[][][] ultimateBoard = new int[BOARD_DIM][BOARD_DIM][FRAMES_DIM];
+    private static int[] lineColors = new int[FRAMES_DIM];
+    private static int[] columnColors = new int[FRAMES_DIM];
+    private static int[] mainDiagonalColors = new int[FRAMES_DIM];
+    private static int[] secondaryDiagonalColors = new int[FRAMES_DIM];
 
     /**
      * Flag to finish the game
      */
     private static boolean terminate = false;
+    private static int score = 0;
+    private static int level = 1;
+    private static long startTime = System.currentTimeMillis();
+    private static Thread timer = null;
+    private static volatile boolean running = true;
+
+    public static void time (){
+        timer = new Thread(() -> {
+            while (running)
+            {
+                long time = System.currentTimeMillis() - startTime;
+                long elapsedSeconds = time / 1000;
+                long secondsDisplay = elapsedSeconds % 60;
+                long elapsedMinutes = elapsedSeconds / 60;
+                SwingUtilities.invokeLater(() -> Panel.printTime((int)elapsedMinutes+":"+(int)secondsDisplay));
+                try { Thread.sleep(100); } catch(Exception e) {}
+            }
+        });
+        timer.start();
+    }
+
+    public static void endTime(){
+        if (timer != null) {
+            try {
+                terminate();
+                timer.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        terminate = true;
+    }
 
     public static void main(String[] args) {
         Panel.init();
@@ -35,212 +74,587 @@ public class ColorFrames {
         Panel.end();
     }
 
-    private static void playGame() {
+    private static void restartGame() {
+        Panel.printMessage("Welcome ");
+        Panel.printMessage("Restart(R);Exit(E);Score(S)");
         int key;
-        for (int f = 0; f < boardMatrix.length; ++f)
-            boardMatrix[f]=NO_FRAME;
+        do {
+            key = Console.waitKeyPressed(5000);
+            if (key > 0) {
+                processKey(key);
+                Console.waitKeyReleased(key);
+            } else Panel.printMessage("");  // Clear last message
+        } while (!terminate);
+    }
+
+    private static void prepareForNewGame(){
+        for (int gridNum = 1; gridNum <= BOARD_PLACES; ++gridNum)
+            for (int frame = 0; frame < FRAMES_DIM; ++frame)
+                Panel.clearFrame(frame, gridNum);
+
+        for (int line = 0; line < ultimateBoard.length; ++line)
+            for (int col = 0; col < ultimateBoard[line].length; ++col)
+                for (int frame= 0; frame < ultimateBoard[line][col].length; ++frame)
+                    ultimateBoard[line][col][frame] = NO_FRAME;
+
+        for (int i = 0; i < FRAMES_DIM; ++i) {
+            lineColors[i]=NO_FRAME;
+            columnColors[i]=NO_FRAME;
+            mainDiagonalColors[i]=NO_FRAME;
+            secondaryDiagonalColors[i]=NO_FRAME;
+        }
+
+        MAX_COLORS=4;
+        score=0;
+        Panel.printScore(score);
+        level = 1;
+        Panel.printLevel(level);
+        timer = null;
+        startTime = System.currentTimeMillis();
+        running = true;
+        Panel.printTime("0");
+        terminate=false;
+        Panel.clearArea();
+        Panel.printGrid();
+        playGame();
+    }
+
+    private static void processClick(Location l) {
+        if (l == null) return; // Não é DOWN
+        System.out.println(l.line+","+l.col);
+        if (l.line>0)
+            cursor(l.line, l.col);
+        if(l.line>=17&&l.line<=23&&l.col>=1&&l.col<=7)
+            processKey(VK_1);
+        if(l.line>=17&&l.line<=23&&l.col>=9&&l.col<=15)
+            processKey(VK_2);
+        if(l.line>=17&&l.line<=23&&l.col>=17&&l.col<=23)
+            processKey(VK_3);
+        if(l.line>=9&&l.line<=15&&l.col>=1&&l.col<=7)
+            processKey(VK_4);
+        if(l.line>=9&&l.line<=15&&l.col>=9&&l.col<=15)
+            processKey(VK_5);
+        if(l.line>=9&&l.line<=15&&l.col>=17&&l.col<=23)
+            processKey(VK_6);
+        if(l.line>=1&&l.line<=7&&l.col>=1&&l.col<=7)
+            processKey(VK_7);
+        if(l.line>=1&&l.line<=7&&l.col>=9&&l.col<=15)
+            processKey(VK_8);
+        if(l.line>=1&&l.line<=7&&l.col>=16&&l.col<=23)
+            processKey(VK_9);
+    }
+
+    private static void playGame() {
+        time();
+        int key;
+        for (int i = 0; i < ultimateBoard.length; ++i)
+            for (int j = 0; j < ultimateBoard[i].length; ++j)
+                for (int k = 0; k < ultimateBoard[i][j].length; ++k)
+                    ultimateBoard[i][j][k] = NO_FRAME;
         generatePiece();
         printPiece();
         do {
             key = Console.waitKeyPressed(5000);
-            if (key>0) {
+            if (key == MOUSE_EVENT){
+                processClick(getMouseEvent(MouseEvent.CLICK));
+            }
+            else if (key > 0) {
                 processKey(key);
                 Console.waitKeyReleased(key);
             } else Panel.printMessage("");  // Clear last message
-        } while( !terminate );
-    }
-
-    private static void processKey(int key) {
-
-        if (key == VK_ESCAPE) terminate = true;
-        int gridNum = 0;
-        if (key >= VK_1 && key <= VK_9)
-            gridNum = key-VK_1+1;
-        else if (key >= VK_NUMPAD1 && key <= VK_NUMPAD9 )
-            gridNum = key-VK_NUMPAD1+1;
-        else if (key >= VK_A && key <= VK_Z)
-            gridNum = key-VK_A+10;
-        if (gridNum>=1 && gridNum<=BOARD_PLACES) {
-            if (validateBoardPlace(gridNum)) {
-                putPieceInBoard(gridNum);
-                Panel.printMessage("Ok");
-                updateSecondaryBoardMatrix(gridNum);
-                generatePiece();
-                printPiece();
-                checkPositionsForVictory(gridNum);
-                if(checkIfBoardIsFull())
-                    terminate = true;
-            }
-            else
-                Panel.printMessage("Invalid;Place");
-        }
-    }
-
-    private static void updateSecondaryBoardMatrix(int gridNum){
-        int iniF = gridNum*2+(gridNum-3);
-        int endF = gridNum*2+(gridNum-1);
-        for (int f = iniF, i=0; f <= endF; ++f, ++i){
-            if(piece[i]!=NO_FRAME)
-                boardMatrix[f]=piece[i];
-        }
-    }
-
-    private static boolean validateBoardPlace(int gridNum) {
-        int iniF = gridNum*2+(gridNum-3);
-        int endF = gridNum*2+(gridNum-1);
-        for (int f = iniF, i=0; f <= endF; ++f, ++i){
-            if(piece[i]!=NO_FRAME)
-                if(boardMatrix[f]!=NO_FRAME)
-                    return false;
-        }
-        return true;
-    }
-
-    private static void putPieceInBoard(int gridNum) {
-        for (int f = 0; f < FRAMES_DIM; ++f) { // For each frame dimension
-            int color = piece[f];
-            if (color!=NO_FRAME) {
-                Panel.printFrame(f,color,gridNum); // Displays the frame with (f) dimension and (color)
-                Panel.clearFrame(f,0);             // Clean the frame of piece.
-            }
-        }
-    }
-
-    public static boolean checkIfBoardIsFull(){
-        for (int i=0; i<boardMatrix.length; ++i) {
-            if(boardMatrix[i]==NO_FRAME) return false;
-        }
-        return true;
-    }
-
-    public static void checkPositionsForVictory(int gridNum) {
-        checkCell(gridNum);
-        checkLines(gridNum);
-        checkColumns(gridNum);
-        checkDiagonals(gridNum);
-    }
-
-    public static void checkLines(int gridNum){
-//        auxBoard[]
-    }
-
-    public static void checkColumns(int gridNum){
-        int iCol = gridNum * 2 + (gridNum - 3);
-        int iLine = iCol;
-        int count = 0;
-        while(iCol>=9)
-            iCol-=9;
-        int jLine = iCol+BOARD_DIM-1;
-        int jCol = iLine+(BOARD_PLACES*2);
-        for (;iLine<=jLine;++iLine) {
-            for(;iCol<=jCol;iCol+=9) {
-                if (boardMatrix[iCol] == boardMatrix[iCol + (BOARD_PLACES)] && boardMatrix[iCol]!=NO_FRAME) count++;
-                else break;
-            }
-
-        }
-        System.out.println(count);
-//        colunas => i=iniF i/=9 até i<=9
-    }
-
-    public static void checkDiagonals(int gridNum){
-
-    }
-
-    public static void checkCell(int gridNum){
-        int iniF = gridNum * 2 + (gridNum - 3);
-        int endF = gridNum * 2 + (gridNum - 1);
-        int count = 0;
-        for (; iniF < endF; ++iniF) {
-            if (boardMatrix[iniF] == boardMatrix[iniF + 1]) count++;
-            else break;
-        }
-        if (count == FRAMES_DIM-1) {
-            iniF = gridNum * 2 + (gridNum - 3);
-            for (; iniF <= endF; ++iniF) {
-                boardMatrix[iniF] = NO_FRAME;
-            }
-            Panel.clearFrame(0, gridNum);
-            Panel.clearFrame(1, gridNum);
-            Panel.clearFrame(2, gridNum);
-            score+=FRAMES_DIM;
-            Panel.printScore(score);
-        }
-    }
-
-    public static boolean validatePieceOnBoardBySize(int i) {
-        for(;i<boardMatrix.length;i+=3)
-            if(boardMatrix[i]==NO_FRAME)
-                return true;
-        return false;
-    }
-
-    public static int validateBoardCells() {
-        int framesToGenerate = 0;
-        int larger = 0;
-        for (int i = 0; i < BOARD_PLACES * 3; i += 3) {
-            for (int j = i, k = i + 2; j <= k; ++j) {
-                if (boardMatrix[j] == NO_FRAME) ++framesToGenerate;
-            }
-            if (framesToGenerate > larger) larger = framesToGenerate;
-            framesToGenerate = 0;
-        }
-        return larger;
-    }
-
-    public static boolean validatePieceCombinations(int[] auxPiece) {
-        int i = 0, j, k, f;
-        for (i = 0; i < BOARD_PLACES * 3; i += 3) {
-            for (j = i, k = i + 2, f = 0; j <= k; ++j, ++f) {
-                if (j <= k) {
-                    if (auxPiece[f] != NO_FRAME && boardMatrix[j] == NO_FRAME || auxPiece[f] == NO_FRAME) {
-                    } else break;
-                }
-            }
-            f = 0;
-            if (j > k) return true;
-        }
-        return false;
+        } while (!terminate);
     }
 
     private static void generatePiece() {
-        int[] auxPiece = new int[FRAMES_DIM];
-        for (int f = 0; f < FRAMES_DIM; ++f)
-            piece[f] = NO_FRAME;
         int kNumber = 1 + validateBoardCells();
-        boolean s = validatePieceOnBoardBySize(0); //returns true if there is space for small pieces
-        boolean m = validatePieceOnBoardBySize(1); //returns true if there is space for medium pieces
-        boolean l = validatePieceOnBoardBySize(2); //returns true if there is space for large pieces
         int numOfFrames = 1 + (int) (Math.random() * (kNumber - 1)); // Frames to generate
         do {
             for (int f = 0; f < FRAMES_DIM; ++f)
-                auxPiece[f] = NO_FRAME;
+                piece[f] = NO_FRAME;
             for (int i = 0; i < numOfFrames; ++i) {
                 int frameSize;
                 do frameSize = (int) (Math.random() * FRAMES_DIM); // Selects a free random dimension
-                while (auxPiece[frameSize] != NO_FRAME);
-                auxPiece[frameSize] = (int) (Math.random() * MAX_COLORS); // Generate random color
+                while (piece[frameSize] != NO_FRAME);
+                piece[frameSize] = 1; //(int) (Math.random() * MAX_COLORS); // Generate random color
             }
-            if(!s&&!m&&!l) break;
-        } while (!validatePieceCombinations(auxPiece));
-        for (int f = 0; f < auxPiece.length; ++f)  // Removes all frames
-            piece[f] = auxPiece[f];
+            if (validateBoardCells() <= 0) break;
+        } while (!validatePieceCombinations(piece));
     }
 
-    private static int validateIfFrameExists(boolean frame) {
-        if (frame) return 1;
-        return 0;
+    private static int validateBoardCells() {
+        int framesToGenerate = 0;
+        int larger = 0;
+        for (int i = 0; i < ultimateBoard.length; ++i)
+            for (int j = 0; j < ultimateBoard[i].length; ++j) {
+                for (int k = 0; k < ultimateBoard[i][j].length; ++k)
+                    if (ultimateBoard[i][j][k] == NO_FRAME) ++framesToGenerate;
+                if (framesToGenerate > larger)
+                    larger = framesToGenerate;
+                framesToGenerate = 0;
+            }
+        return larger;
     }
 
-    private static int generateFrameSize(boolean s, boolean m, boolean l) {
-        return validateIfFrameExists(s) + validateIfFrameExists(m) + validateIfFrameExists(l);
+    private static boolean validatePieceCombinations(int[] piece) {
+        int k;
+        for (int i = 0; i < ultimateBoard.length; ++i)
+            for (int j = 0; j < ultimateBoard[i].length; ++j) {
+                for (k = 0; k < ultimateBoard[i][j].length; ++k) {
+                    if (piece[k] != NO_FRAME && ultimateBoard[i][j][k] == NO_FRAME || piece[k] == NO_FRAME) {}
+                    else
+                        break;
+                }
+                if(k>=ultimateBoard[i][j].length) return true;
+            }
+        return false;
     }
 
     private static void printPiece() {
         for (int f = 0; f < FRAMES_DIM; ++f) {  // For each frame dimension
             int color = piece[f];
-            if (color==NO_FRAME) Panel.clearFrame(f,0);  // Clean if does not exist with (f) dimension
-            else Panel.printFrame(f,color,0);      // or Displays the frame with (f) dimension and (color)
+            if (color == NO_FRAME) Panel.clearFrame(f, 0);  // Clean if does not exist with (f) dimension
+            else Panel.printFrame(f, color, 0);      // or Displays the frame with (f) dimension and (color)
         }
+    }
+
+    public static void terminate() {
+        running = false;
+    }
+
+    private static void processKey(int key) {
+        if (key == VK_ESCAPE){
+            endTime();
+            terminate = true;
+        }
+        if (checkIfBoardIsFull()) {
+            endTime();
+            if (key == VK_E) terminate = true;
+            else if (key == VK_R)
+                prepareForNewGame();
+            else if (key == VK_H) {
+                //highScore();
+            }
+        }
+        int gridNum = 0;
+        if (key >= VK_1 && key <= VK_9)
+            gridNum = key - VK_1 + 1;
+        else if (key >= VK_NUMPAD1 && key <= VK_NUMPAD9)
+            gridNum = key - VK_NUMPAD1 + 1;
+        else if (key >= VK_A && key <= VK_Z)
+            gridNum = key - VK_A + 10;
+        if (gridNum >= 1 && gridNum <= BOARD_PLACES) {
+            if (validateBoardPlace(gridNum)) {
+                Panel.printLevel(level);
+                putPieceInBoard(gridNum);
+                Panel.printMessage("Ok");
+                updateUltimateBoard(gridNum);
+                checkPositionsForVictory(gridNum);
+                updateBoard();
+                updateMaxColors(score);
+                generatePiece();
+                printPiece();
+                if (checkIfBoardIsFull())
+                    restartGame();
+            } else
+                Panel.printMessage("Invalid;Place");
+        }
+    }
+
+    private static boolean validateBoardPlace(int gridNum) {
+        int line = getLine(gridNum);
+        int col = getCol(gridNum);
+        for (int k = 0; k < ultimateBoard[line][col].length; ++k)
+            if (piece[k] != NO_FRAME)
+                if (ultimateBoard[line][col][k] != NO_FRAME)
+                    return false;
+        return true;
+    }
+
+    private static int getLine(int gridNum) {
+        return (gridNum - 1) / BOARD_DIM;
+    }
+
+    private static int getCol(int gridNum) {
+        return (gridNum - 1) % BOARD_DIM;
+    }
+
+    private static void putPieceInBoard(int gridNum) {
+        for (int f = 0; f < FRAMES_DIM; ++f) { // For each frame dimension
+            int color = piece[f];
+            if (color != NO_FRAME) {
+                Panel.printFrame(f, color, gridNum); // Displays the frame with (f) dimension and (color)
+                Panel.clearFrame(f, 0);             // Clean the frame of piece.
+            }
+        }
+    }
+
+    private static void updateUltimateBoard(int gridNum) {
+        int line = getLine(gridNum);
+        int col = getCol(gridNum);
+        for (int k = 0; k < ultimateBoard[line][col].length; ++k)
+            if (piece[k] != NO_FRAME)
+                ultimateBoard[line][col][k] = piece[k];
+    }
+
+    private static void checkPositionsForVictory(int gridNum) {
+        boolean removeCell = false;
+        if(FRAMES_DIM>1)
+            removeCell = checkCell(gridNum);
+        boolean removeLine = checkLines(gridNum);
+        boolean removeColumn = checkColumns(gridNum);
+        boolean removeMainDiagonal = false;
+        if (getLine(gridNum) == getCol(gridNum))
+            removeMainDiagonal = checkMainDiagonal(gridNum);
+        boolean removeSecondaryDiagonal = false;
+        if (getLine(gridNum) + getCol(gridNum) == BOARD_DIM - 1)
+            removeSecondaryDiagonal = checkSecondaryDiagonal(gridNum);
+        clearFrames(gridNum, removeCell, removeLine, removeColumn, removeMainDiagonal, removeSecondaryDiagonal);
+    }
+
+    private static boolean checkCell(int gridNum) {
+        int line = getLine(gridNum);
+        int col = getCol(gridNum);
+        for (int k = 0, j = 1; j < ultimateBoard[line][col].length; ++k, ++j)
+            if (ultimateBoard[line][col][k] != ultimateBoard[line][col][j])
+                return false;
+        return true;
+    }
+
+    private static boolean checkIfPlaceInLineIsEmpty(int gridNum) {
+        int frameNextCol;
+        int line = getLine(gridNum);
+        int col;
+        for (col = 1; col < BOARD_DIM; ++col) {
+            int sum = 0;
+            for (frameNextCol = 0; frameNextCol < FRAMES_DIM; ++frameNextCol)
+                sum += ultimateBoard[line][col][frameNextCol];
+            if (sum == FRAMES_DIM * NO_FRAME)
+                return false;
+        }
+        return true;
+    }
+
+    private static boolean checkIfPlaceInColumnIsEmpty(int gridNum) {
+        int frameNextCol;
+        int line;
+        int col = getCol(gridNum);
+        for (line = 1; line < BOARD_DIM; ++line) {
+            int sum = 0;
+            for (frameNextCol = 0; frameNextCol < FRAMES_DIM; ++frameNextCol)
+                sum += ultimateBoard[line][col][frameNextCol];
+            if (sum == FRAMES_DIM * NO_FRAME)
+                return false;
+        }
+        return true;
+    }
+
+    private static boolean checkIfPlaceInMainDiagonalIsEmpty(int gridNum) {
+        int frameNextCol;
+        int line = getLine(gridNum);
+        for (; line < BOARD_DIM; ++line) {
+            int sum = 0;
+            for (frameNextCol = 0; frameNextCol < FRAMES_DIM; ++frameNextCol)
+                sum += ultimateBoard[line][line][frameNextCol];
+            if (sum == FRAMES_DIM * NO_FRAME)
+                return false;
+        }
+        return true;
+    }
+
+    private static boolean checkIfPlaceInSecondaryDiagonalIsEmpty(int gridNum) {
+        int frameNextCol;
+        int line = getLine(gridNum);
+        int col = getCol(gridNum);
+        for (; line < BOARD_DIM; ++line, --col) {
+            int sum = 0;
+            for (frameNextCol = 0; frameNextCol < FRAMES_DIM; ++frameNextCol)
+                sum += ultimateBoard[line][col][frameNextCol];
+            if (sum == FRAMES_DIM * NO_FRAME)
+                return false;
+        }
+        return true;
+    }
+
+    private static boolean checkLines(int gridNum) {
+        lineColors = new int[FRAMES_DIM];
+        for (int f = 0; f < lineColors.length; ++f)
+            lineColors[f] = NO_FRAME;
+        int line = getLine(gridNum);
+        int col = 1;
+        int frameNextCol;
+        int color;
+        boolean[] checkIfAllPlacesContainFrameColor = new boolean[BOARD_DIM];
+        if (!checkIfPlaceInLineIsEmpty(gridNum))
+            return false;
+        for (int frame = 0; frame < FRAMES_DIM; ++frame) {
+            if (ultimateBoard[line][0][frame] == NO_FRAME) continue;
+            color = ultimateBoard[line][0][frame];
+            checkIfAllPlacesContainFrameColor[0] = true;
+            for (col = 1; col < BOARD_DIM; ++col) {
+                for (frameNextCol = 0; frameNextCol < FRAMES_DIM; ++frameNextCol) {
+                    if (color == ultimateBoard[line][col][frameNextCol])
+                        break;
+                }
+                if (frameNextCol >= FRAMES_DIM)
+                    break;
+                else
+                    checkIfAllPlacesContainFrameColor[col] = true;
+            }
+            int i = 0;
+            for (; i < checkIfAllPlacesContainFrameColor.length; ++i)
+                if (checkIfAllPlacesContainFrameColor[i] == false)
+                    break;
+            if (i >= checkIfAllPlacesContainFrameColor.length) {
+                lineColors[frame] = color;
+                checkIfAllPlacesContainFrameColor = new boolean[BOARD_DIM];
+            }
+        }
+        for (int i = 0; i < lineColors.length; ++i)
+            if (lineColors[i] != NO_FRAME)
+                return true;
+        return false;
+    }
+
+    private static boolean checkColumns(int gridNum) {
+        columnColors = new int[FRAMES_DIM];
+        for (int f = 0; f < columnColors.length; ++f)
+            columnColors[f] = NO_FRAME;
+        int line;
+        int col = getCol(gridNum);
+        int frameNextLine;
+        int color;
+        boolean[] checkIfAllPlacesContainFrameColor = new boolean[BOARD_DIM];
+        if (!checkIfPlaceInColumnIsEmpty(gridNum))
+            return false;
+        for (int frame = 0; frame < FRAMES_DIM; ++frame) {
+            if (ultimateBoard[0][col][frame] == NO_FRAME) continue;
+            color = ultimateBoard[0][col][frame];
+            checkIfAllPlacesContainFrameColor[0] = true;
+            for (line = 1; line < BOARD_DIM; ++line) {
+                for (frameNextLine = 0; frameNextLine < FRAMES_DIM; ++frameNextLine) {
+                    if (color == ultimateBoard[line][col][frameNextLine])
+                        break;
+                }
+                if (frameNextLine >= FRAMES_DIM)
+                    break;
+                else
+                    checkIfAllPlacesContainFrameColor[line] = true;
+            }
+            int i = 0;
+            for (; i < checkIfAllPlacesContainFrameColor.length; ++i)
+                if (checkIfAllPlacesContainFrameColor[i] == false)
+                    break;
+            if (i >= checkIfAllPlacesContainFrameColor.length) {
+                columnColors[frame] = color;
+                checkIfAllPlacesContainFrameColor = new boolean[BOARD_DIM];
+            }
+        }
+        for (int i = 0; i < columnColors.length; ++i)
+            if (columnColors[i] != NO_FRAME)
+                return true;
+        return false;
+    }
+
+    private static boolean checkMainDiagonal(int gridNum) {
+        mainDiagonalColors = new int[FRAMES_DIM];
+        for (int f = 0; f < mainDiagonalColors.length; ++f)
+            mainDiagonalColors[f] = NO_FRAME;
+        int line;
+        int frameNextLine;
+        int color;
+        boolean[] checkIfAllPlacesContainFrameColor = new boolean[BOARD_DIM];
+        if (!checkIfPlaceInMainDiagonalIsEmpty(gridNum))
+            return false;
+        for (int frame = 0; frame < FRAMES_DIM; ++frame) {
+            if (ultimateBoard[0][0][frame] == NO_FRAME) continue;
+            color = ultimateBoard[0][0][frame];
+            checkIfAllPlacesContainFrameColor[0] = true;
+            for (line = 1; line < BOARD_DIM; ++line) {
+                for (frameNextLine = 0; frameNextLine < FRAMES_DIM; ++frameNextLine) {
+                    if (color == ultimateBoard[line][line][frameNextLine])
+                        break;
+                }
+                if (frameNextLine >= FRAMES_DIM)
+                    break;
+                else
+                    checkIfAllPlacesContainFrameColor[line] = true;
+            }
+            int i = 0;
+            for (; i < checkIfAllPlacesContainFrameColor.length; ++i)
+                if (checkIfAllPlacesContainFrameColor[i] == false)
+                    break;
+            if (i >= checkIfAllPlacesContainFrameColor.length) {
+                mainDiagonalColors[frame] = color;
+                checkIfAllPlacesContainFrameColor = new boolean[BOARD_DIM];
+            }
+        }
+        for (int i = 0; i < mainDiagonalColors.length; ++i)
+            if (mainDiagonalColors[i] != NO_FRAME)
+                return true;
+        return false;
+    }
+
+    private static boolean checkSecondaryDiagonal(int gridNum) {
+        secondaryDiagonalColors = new int[FRAMES_DIM];
+        for (int f = 0; f < secondaryDiagonalColors.length; ++f)
+            secondaryDiagonalColors[f] = NO_FRAME;
+        int line;
+        int frameNextLine;
+        int color;
+        boolean[] checkIfAllPlacesContainFrameColor = new boolean[BOARD_DIM];
+        if (!checkIfPlaceInSecondaryDiagonalIsEmpty(gridNum))
+            return false;
+        for (int frame = 0; frame < FRAMES_DIM; ++frame) {
+            int col = BOARD_DIM - 1;
+            if (ultimateBoard[0][col][frame] == NO_FRAME) continue;
+            color = ultimateBoard[0][col][frame];
+            checkIfAllPlacesContainFrameColor[0] = true;
+            --col;
+            for (line = 1; line < BOARD_DIM; ++line, --col) {
+                for (frameNextLine = 0; frameNextLine < FRAMES_DIM; ++frameNextLine) {
+                    if (color == ultimateBoard[line][col][frameNextLine])
+                        break;
+                }
+                if (frameNextLine >= FRAMES_DIM)
+                    break;
+                else
+                    checkIfAllPlacesContainFrameColor[line] = true;
+            }
+            int i = 0;
+            for (; i < checkIfAllPlacesContainFrameColor.length; ++i)
+                if (checkIfAllPlacesContainFrameColor[i] == false)
+                    break;
+            if (i >= checkIfAllPlacesContainFrameColor.length) {
+                secondaryDiagonalColors[frame] = color;
+                checkIfAllPlacesContainFrameColor = new boolean[BOARD_DIM];
+            }
+        }
+        for (int i = 0; i < secondaryDiagonalColors.length; ++i)
+            if (secondaryDiagonalColors[i] != NO_FRAME)
+                return true;
+        return false;
+    }
+
+    private static void updateBoard() {
+        int gridNum = 1;
+        while (gridNum <= BOARD_PLACES) {
+            for (int line = 0; line < ultimateBoard.length; ++line) {
+                for (int col = 0; col < ultimateBoard[line].length; ++col) {
+                    for (int frame = 0; frame < ultimateBoard[line][col].length; ++frame) {
+                        if (ultimateBoard[line][col][frame] == NO_FRAME) {
+                            sleep(2);
+                            Panel.clearFrame(frame, gridNum);
+                        }
+                    }
+                    gridNum++;
+                }
+            }
+        }
+    }
+
+    private static void clearFrames(int gridNum, boolean removeCell, boolean removeLine, boolean removeColumn, boolean removeMainDiagonal, boolean removeSecondaryDiagonal) {
+        if(removeCell) {
+            int line = getLine(gridNum);
+            int col = getCol(gridNum);
+            int k=0;
+            int i=0;
+            while(i<FRAMES_DIM) {
+                score += 1;
+                while (k < FRAMES_DIM) {
+                    Panel.clearFrame(k, gridNum);
+                    ++k;
+                }
+                sleep(100);
+                k=0;
+                while (k < FRAMES_DIM) {
+                    Panel.printFrame(k, ultimateBoard[line][col][k], gridNum);
+                    ++k;
+                }
+                sleep(100);
+                k=0;
+                ++i;
+                Panel.printScore(score);
+            }
+            for (int j = 0; j < ultimateBoard[line][col].length; ++j)
+                ultimateBoard[line][col][j] = NO_FRAME;
+        }
+        if(removeLine){
+            int line = getLine(gridNum);
+            for (int col = 0; col < BOARD_DIM; ++col)
+                for (int frame = 0; frame < FRAMES_DIM; ++frame)
+                    for (int color = 0; color < lineColors.length; ++color)
+                        if (ultimateBoard[line][col][frame] == lineColors[color] && ultimateBoard[line][col][frame] != NO_FRAME) {
+                            ultimateBoard[line][col][frame] = NO_FRAME;
+                            score+=1;
+                        }
+        }
+        if(removeColumn) {
+            int col = getCol(gridNum);
+            for (int line = 0; line < BOARD_DIM; ++line)
+                for (int frame = 0; frame < FRAMES_DIM; ++frame)
+                    for (int color = 0; color < columnColors.length; ++color)
+                        if (ultimateBoard[line][col][frame] == columnColors[color] && ultimateBoard[line][col][frame] != NO_FRAME) {
+                            ultimateBoard[line][col][frame] = NO_FRAME;
+                            score+=1;
+                        }
+        }
+        if(removeMainDiagonal){
+            for (int line = 0; line < BOARD_DIM; ++line)
+                for (int frame = 0; frame < FRAMES_DIM; ++frame)
+                    for (int color = 0; color < mainDiagonalColors.length; ++color)
+                        if (ultimateBoard[line][line][frame] == mainDiagonalColors[color] && ultimateBoard[line][line][frame] != NO_FRAME) {
+                            ultimateBoard[line][line][frame] = NO_FRAME;
+                            score+=1;
+                        }
+        }
+        if(removeSecondaryDiagonal){
+            for (int line = 0, col = BOARD_DIM-1; line < BOARD_DIM; ++line, --col)
+                for (int frame = 0; frame < FRAMES_DIM; ++frame)
+                    for (int color = 0; color < secondaryDiagonalColors.length; ++color)
+                        if (ultimateBoard[line][col][frame] == secondaryDiagonalColors[color] && ultimateBoard[line][col][frame] != NO_FRAME) {
+                            ultimateBoard[line][col][frame] = NO_FRAME;
+                            score+=1;
+                        }
+        }
+        Panel.printScore(score);
+    }
+
+    private static void updateMaxColors(int score) {
+        if(MAX_COLORS<8) {
+            if (score > 25 && score <= 50 && level == 1) {
+                MAX_COLORS++;
+                level++;
+                Panel.printLevel(level);
+            }
+            if (score > 50 && score <= 100 && level == 2) {
+                MAX_COLORS++;
+                level++;
+                Panel.printLevel(level);
+            }
+            if (score > 100 && score <= 200 && level == 3) {
+                MAX_COLORS++;
+                level++;
+                Panel.printLevel(level);
+            }
+            if (score > 200 && score <= 400 && level == 4) {
+                MAX_COLORS++;
+                level++;
+                Panel.printLevel(level);
+            }
+            if (score > 400 && level == 5) {
+                MAX_COLORS++;
+                level++;
+                Panel.printLevel(level);
+            }
+        }
+    }
+
+    private static boolean checkIfBoardIsFull() {
+        for (int i = 0; i < ultimateBoard.length; ++i)
+            for (int j = 0; j < ultimateBoard[i].length; ++j)
+                for (int k = 0; k < ultimateBoard[i][j].length; ++k)
+                    if (ultimateBoard[i][j][k] == NO_FRAME)
+                        return false;
+        return true;
     }
 }
