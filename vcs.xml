@@ -10,6 +10,10 @@
           <option name="url" value="https://github.com/joaocarneiro/Tamagotchi.git" />
           <option name="userName" value="" />
         </UrlAndUserName>
+        <UrlAndUserName>
+          <option name="url" value="https://github.com/jtrindade/isel-poo-1819-2.git" />
+          <option name="userName" value="" />
+        </UrlAndUserName>
       </list>
     </option>
     <option name="cloneParentDir" value="C:\Users\Oxwray\IdeaProjects" />
