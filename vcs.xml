@@ -18,6 +18,10 @@
           <option name="url" value="https://github.com/joaocarneiro/POO1819SV.git" />
           <option name="userName" value="" />
         </UrlAndUserName>
+        <UrlAndUserName>
+          <option name="url" value="https://github.com/joaocarneiro/Sokoban.git" />
+          <option name="userName" value="" />
+        </UrlAndUserName>
       </list>
     </option>
     <option name="cloneParentDir" value="C:\Users\Oxwray\IdeaProjects" />
